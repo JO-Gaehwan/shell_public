@@ -8,6 +8,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Logging functions
+log_info() {
+    echo -e "${YELLOW}→ $1${NC}"
+}
+
+log_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+}
+
+log_error() {
+    echo -e "${RED}✗ $1${NC}"
+}
+
 # GitHub repository settings
 GITHUB_USER="JO-Gaehwan"
 REPO_NAME="shell_public"
