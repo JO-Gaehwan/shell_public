@@ -60,21 +60,59 @@ install_claude_code() {
 
 # Download settings
 download_settings() {
+    log_info "Downloading settings from GitHub..."
+    
     TEMP_DIR=$(mktemp -d)
     cd "$TEMP_DIR"
     
-    curl -sL "https://github.com/$GITHUB_USER/$REPO_NAME/archive/$BRANCH.tar.gz" | tar -xz
+    # 방법 1: refs/heads 포함한 전체 경로 사용
+    ARCHIVE_URL="https://github.com/$GITHUB_USER/$REPO_NAME/archive/refs/heads/$BRANCH.tar.gz"
     
-    EXTRACTED_DIR="$REPO_NAME-$BRANCH/$SETTINGS_PATH"
+    log_info "Fetching from: $ARCHIVE_URL"
     
-    if [ -d "$EXTRACTED_DIR/commands" ]; then
-        mkdir -p "$CLAUDE_DIR"
-        rm -rf "$COMMANDS_DIR"  # 백업 없이 덮어쓰기
-        cp -r "$EXTRACTED_DIR/commands" "$COMMANDS_DIR"
-        chmod -R 755 "$COMMANDS_DIR"
+    # -f 옵션 추가로 실패시 에러 반환
+    if curl -fL "$ARCHIVE_URL" -o archive.tar.gz; then
+        # 다운로드 성공 확인
+        if [ -f archive.tar.gz ] && [ -s archive.tar.gz ]; then
+            # 파일 타입 확인
+            FILE_TYPE=$(file archive.tar.gz)
+            log_info "Downloaded file type: $FILE_TYPE"
+            
+            # tar.gz 압축 해제
+            if tar -xzf archive.tar.gz 2>/dev/null; then
+                # 압축 해제된 디렉토리 찾기
+                EXTRACTED_DIR=$(ls -d */ 2>/dev/null | head -n1)
+                log_info "Extracted directory: $EXTRACTED_DIR"
+                
+                # commands 디렉토리 경로 확인
+                COMMANDS_PATH="${EXTRACTED_DIR}${SETTINGS_PATH}/commands"
+                
+                if [ -d "$COMMANDS_PATH" ]; then
+                    mkdir -p "$CLAUDE_DIR"
+                    rm -rf "$COMMANDS_DIR"
+                    cp -r "$COMMANDS_PATH" "$COMMANDS_DIR"
+                    chmod -R 755 "$COMMANDS_DIR"
+                    
+                    COMMAND_COUNT=$(find "$COMMANDS_DIR" -type f | wc -l)
+                    log_success "Imported $COMMAND_COUNT command files"
+                else
+                    log_error "Commands directory not found at: $COMMANDS_PATH"
+                    log_info "Available directories:"
+                    ls -la "${EXTRACTED_DIR}${SETTINGS_PATH}/" 2>/dev/null || echo "Path not found"
+                fi
+            else
+                log_error "Failed to extract archive"
+            fi
+        else
+            log_error "Downloaded file is empty or invalid"
+        fi
+    else
+        log_error "Failed to download from GitHub"
+        log_info "Please check if repository exists and is public"
     fi
     
-    cd ~ && rm -rf "$TEMP_DIR"
+    cd ~
+    rm -rf "$TEMP_DIR"
 }
 
 # Main
