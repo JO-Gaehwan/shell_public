@@ -10,7 +10,7 @@ NC='\033[0m'
 
 # GitHub repository settings
 GITHUB_USER="JO-Gaehwan"
-REPO_NAME="shell"
+REPO_NAME="shell_public"
 BRANCH="main"
 SETTINGS_PATH="settings/ubuntu/claude_settings"
 
